@@ -1,0 +1,55 @@
+tile_set: "/main/tiles.tilesource"
+layers {
+  id: "snake"
+  z: 0.0
+  is_visible: 1
+  cell {
+    x: 0
+    y: 0
+    tile: 47
+    h_flip: 0
+    v_flip: 0
+  }
+  cell {
+    x: 39
+    y: 29
+    tile: 47
+    h_flip: 0
+    v_flip: 0
+  }
+}
+layers {
+  id: "stats"
+  z: 0.0
+  is_visible: 1
+  cell {
+    x: 0
+    y: 0
+    tile: 37
+    h_flip: 0
+    v_flip: 0
+  }
+  cell {
+    x: 39
+    y: 0
+    tile: 37
+    h_flip: 0
+    v_flip: 0
+  }
+  cell {
+    x: 0
+    y: 29
+    tile: 37
+    h_flip: 0
+    v_flip: 0
+  }
+  cell {
+    x: 39
+    y: 29
+    tile: 37
+    h_flip: 0
+    v_flip: 0
+  }
+}
+material: "/builtins/materials/tile_map.material"
+blend_mode: BLEND_MODE_ALPHA
