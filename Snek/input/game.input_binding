@@ -18,3 +18,7 @@ key_trigger {
   input: KEY_UP
   action: "up"
 }
+key_trigger {
+  input: KEY_M
+  action: "mute"
+}

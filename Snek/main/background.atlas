@@ -1,5 +1,14 @@
 images {
-  image: "/main/background.png"
+  image: "/assets/images/background.png"
+}
+images {
+  image: "/assets/images/gameover.png"
+}
+images {
+  image: "/assets/images/snek.png"
+}
+images {
+  image: "/assets/images/ztostart.png"
 }
 margin: 0
 extrude_borders: 2

@@ -71,6 +71,7 @@ function startGame()
 	inPlay = true
 	pellets = {}
 	addPellet()
+	msg.post("/ui", "disable")
 end
 
 function showSnake()
@@ -195,6 +196,14 @@ function processCommandQueue()
 	end
 end
 
+function doGameOver()
+	sound.play(DEATH_URL)
+	inPlay = false
+	msg.post("/ui", "enable")
+	msg.post("/ui#gameOver", "enable")
+	msg.post("/ui#title", "disable")
+end
+
 function processMoveTimer(dt)
 	moveTimer = moveTimer - dt
 	if moveTimer<0 then
@@ -208,11 +217,9 @@ function processMoveTimer(dt)
 			snake[#snake].flags = snake[#snake].flags - flags[opposite[endSegment.direction]]
 		end
 		if snake[1].x < 1 or snake[1].x>BOARD_COLUMNS or snake[1].y<1 or snake[1].y>BOARD_ROWS then
-			sound.play(DEATH_URL)
-			inPlay = false
+			doGameOver()
 		elseif hasSnakeBody(snake[1].x,snake[1].y) then
-			sound.play(DEATH_URL)
-			inPlay = false
+			doGameOver()
 		else
 			if hasPellet(snake[1].x,snake[1].y) then
 				sound.play(CHOMP_URL)
@@ -272,6 +279,10 @@ function update(self, dt)
 	updateBoard()
 end
 
+function toggleMute()
+	sound.set_group_gain("master", 1-sound.get_group_gain("master"))
+end
+
 function on_input(self, action_id, action)
 	if inPlay then
 		if action_id == hash("up") and action.pressed then
@@ -282,10 +293,14 @@ function on_input(self, action_id, action)
 			table.insert(commandQueue, DIRECTION_WEST)
 		elseif action_id == hash("right") and action.pressed then
 			table.insert(commandQueue, DIRECTION_EAST)
+		elseif action_id == hash("mute") and action.pressed then
+			toggleMute()
 		end
 	else
 		if action_id == hash("green") then
 			startGame()
+		elseif action_id == hash("mute") and action.pressed then
+			toggleMute()
 		end
 	end
 end
