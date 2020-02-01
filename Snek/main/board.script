@@ -1,14 +1,19 @@
 local BOARD_URL = "#board"
 local SNAKE_LAYER = "snake"
 local STATS_LAYER = "stats"
+local BGM_URL = "#bgm"
+local TURN_URL = "#turn"
+local CHOMP_URL = "#chomp"
+local DEATH_URL = "#death"
 local BOARD_COLUMNS = 40
 local BOARD_ROWS = 30
 local DIRECTION_NORTH = 1
 local DIRECTION_EAST = 2
 local DIRECTION_SOUTH = 3
 local DIRECTION_WEST = 4
-local INITIAL_LENGTH = 14
+local INITIAL_LENGTH = 4
 local INITIAL_MOVETIMER = 0.1
+local INITIAL_PELLETTIMER = 10
 
 local score = 0
 local highScore = 0
@@ -39,8 +44,8 @@ function addPellet()
 	local x
 	local y
 	while not done do
-		x = math.random(1, BOARD_COLUMNS)
-		y = math.random(1, BOARD_ROWS)
+		x = math.random(2, BOARD_COLUMNS-1)
+		y = math.random(2, BOARD_ROWS-1)
 		done = true
 		for i, v in ipairs(pellets) do
 			if x == v.x and y == v.y then
@@ -61,6 +66,7 @@ function startGame()
 	snakeLength = INITIAL_LENGTH
 	direction = DIRECTION_SOUTH
 	moveTimer = INITIAL_MOVETIMER
+	pelletTimer = INITIAL_PELLETTIMER
 	snake = {{x = math.floor(BOARD_COLUMNS/2), y=math.floor(BOARD_ROWS/2), pellet=false, flags=0}}
 	inPlay = true
 	pellets = {}
@@ -87,7 +93,59 @@ function showPellets()
 	end
 end
 
+function showScore()
+	local x = 1
+	local temp = score
+	while temp>9 do
+		temp = math.floor(temp/10)
+		x = x + 1
+	end
+	temp = score
+	local first = true
+	while first or temp>0 do
+		first = false
+		local digit = temp % 10
+		tilemap.set_tile(BOARD_URL, STATS_LAYER, x, BOARD_ROWS, digit + 38)
+		temp = math.floor(temp/10)
+		x = x - 1
+	end
+end
+
+function showPelletTimer()
+	local x = 1
+	local temp = math.ceil(pelletTimer)
+	while temp>9 do
+		temp = math.floor(temp/10)
+		x = x + 1
+	end
+	temp = math.ceil(pelletTimer)
+	local first = true
+	while first or temp>0 do
+		first = false
+		local digit = temp % 10
+		tilemap.set_tile(BOARD_URL, STATS_LAYER, x, 1, digit + 38)
+		temp = math.floor(temp/10)
+		x = x - 1
+	end
+end
+
+function showHighScore()
+	local x = BOARD_COLUMNS
+	temp = highScore
+	local first = true
+	while first or temp>0 do
+		first = false
+		local digit = temp % 10
+		tilemap.set_tile(BOARD_URL, STATS_LAYER, x, BOARD_ROWS, digit + 38)
+		temp = math.floor(temp/10)
+		x = x - 1
+	end
+end
+
 function showStats()
+	showScore()
+	showHighScore()
+	showPelletTimer()
 end
 
 function hasPellet(x,y)
@@ -120,40 +178,72 @@ function removePellets(x,y)
 	end
 end
 
-function updateSnake(dt)
-	if inPlay then
-		if #commandQueue > 0 then
-			local command = table.remove(commandQueue,1)
-			if direction~=opposite[command] then
-				direction = command
-			end
+function increaseScore()
+	score = score + 1
+	if score>highScore then
+		highScore = score
+	end
+end
+
+function processCommandQueue()
+	if #commandQueue > 0 then
+		local command = table.remove(commandQueue,1)
+		if direction~=opposite[command] then
+			sound.play(TURN_URL)
+			direction = command
 		end
-		moveTimer = moveTimer - dt
-		if moveTimer<0 then
-			moveTimer = moveTimer + INITIAL_MOVETIMER
-			snake[1].flags = snake[1].flags+flags[direction]
-			snake[1].direction = direction
-			local nextSegment = {x = snake[1].x + deltaX[direction], y = snake[1].y+deltaY[direction], flags=flags[opposite[direction]], pellet=false}
-			table.insert(snake, 1, nextSegment)
-			if #snake > snakeLength then
-				local endSegment = table.remove(snake)
-				snake[#snake].flags = snake[#snake].flags - flags[opposite[endSegment.direction]]
-			end
-			if snake[1].x < 1 or snake[1].x>BOARD_COLUMNS or snake[1].y<1 or snake[1].y>BOARD_ROWS then
-				inPlay = false
-			elseif hasSnakeBody(snake[1].x,snake[1].y) then
-				inPlay = false
-			else
-				if hasPellet(snake[1].x,snake[1].y) then
-					removePellets(snake[1].x,snake[1].y)
-					snake[1].pellet = true
-					snakeLength=snakeLength + 2
-					if #pellets==0 then
-						addPellet()
-					end
+	end
+end
+
+function processMoveTimer(dt)
+	moveTimer = moveTimer - dt
+	if moveTimer<0 then
+		moveTimer = moveTimer + INITIAL_MOVETIMER
+		snake[1].flags = snake[1].flags+flags[direction]
+		snake[1].direction = direction
+		local nextSegment = {x = snake[1].x + deltaX[direction], y = snake[1].y+deltaY[direction], flags=flags[opposite[direction]], pellet=false}
+		table.insert(snake, 1, nextSegment)
+		if #snake > snakeLength then
+			local endSegment = table.remove(snake)
+			snake[#snake].flags = snake[#snake].flags - flags[opposite[endSegment.direction]]
+		end
+		if snake[1].x < 1 or snake[1].x>BOARD_COLUMNS or snake[1].y<1 or snake[1].y>BOARD_ROWS then
+			sound.play(DEATH_URL)
+			inPlay = false
+		elseif hasSnakeBody(snake[1].x,snake[1].y) then
+			sound.play(DEATH_URL)
+			inPlay = false
+		else
+			if hasPellet(snake[1].x,snake[1].y) then
+				sound.play(CHOMP_URL)
+				pelletTimer = INITIAL_PELLETTIMER
+				removePellets(snake[1].x,snake[1].y)
+				snake[1].pellet = true
+				snakeLength=snakeLength + 2
+				if #pellets==0 then
+					increaseScore()
+					addPellet()
 				end
 			end
 		end
+	end
+end
+
+function processPelletTimer(dt)
+	pelletTimer = pelletTimer - dt
+	if pelletTimer < 0 then
+		pelletTimer = pelletTimer + INITIAL_PELLETTIMER
+		addPellet()
+		addPellet()
+		sound.play("#penalty")
+	end
+end
+
+function updateSnake(dt)
+	if inPlay then
+		processCommandQueue()
+		processMoveTimer(dt)
+		processPelletTimer(dt)
 	end
 end
 
@@ -173,7 +263,7 @@ end
 function init(self)
 	math.randomseed(os.time())
 	msg.post(".","acquire_input_focus")
-	clearBoard()
+	sound.play(BGM_URL)
 end
 
 function update(self, dt)

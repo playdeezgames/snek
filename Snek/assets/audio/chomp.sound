@@ -1,0 +1,6 @@
+sound: "/assets/audio/413044__z-er0__serpent-chomp-s.wav"
+looping: 0
+group: "master"
+gain: 1.0
+pan: 0.0
+speed: 1.0
