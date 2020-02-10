@@ -246,11 +246,16 @@ function processPelletTimer(dt)
 	end
 end
 
+local lastTime = os.clock()
+
 function updateSnake(dt)
+	local thisTime = os.clock()
+	local seconds = thisTime - lastTime
+	lastTime = thisTime
 	if inPlay then
 		processCommandQueue()
-		processMoveTimer(dt)
-		processPelletTimer(dt)
+		processMoveTimer(seconds)
+		processPelletTimer(seconds)
 	end
 end
 
